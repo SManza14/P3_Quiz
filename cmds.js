@@ -201,20 +201,20 @@ exports.playCmd = rl => {
   
   let score = 0;
   let toBeAnswered = [];
-  for(let i = 0; i < model.count(); i++){
-    toBeAnswered[i] = i;
-  };
-
-  const playOne = () =>{
-    if(toBeAnswered.length === 0){
+  models.quiz.findAll()
+  .each(quiz => {
+      toBeAnswered.push(quiz);
+  })
+  .then(playOne = () =>{
+      if(toBeAnswered.length === 0){
 
       log('Fin del test.')
-      log('Error! Número de acietos: ');
-      biglog(score, 'green');
+      log('Número de aciertos: ');
+      log(score, 'green');
       rl.prompt();
     } else {
       let id = Math.floor(Math.random() * toBeAnswered.length);
-      let quiz = model.getByIndex(toBeAnswered[id]);
+      let quiz = toBeAnswered[id];
       toBeAnswered.splice(id, 1);
 
       rl.question(quiz.question + ` ${colorize('=>', 'magenta')} `, answer => {
@@ -226,19 +226,29 @@ exports.playCmd = rl => {
 
         } else {
           log('Incorrecto');
-          log(score);
-          log('fin');
+          log(`${colorize(score, 'red')} aciertos.`);
+          log('fin del test.');
           rl.prompt();
 
         }
       }
     )
-  };
+
+    }
+  })
+   .catch(Sequelize.ValidationError, error => {
+    errorlog('El quiz es erróneo:');
+    error.errors.forEach(({message}) => errorlog(message));
+  })
+  .catch(error => {
+    errorlog(error.message);
+  })
+  .then(() =>{
+    rl.prompt();
+  });
+
 };
 
-  playOne();
-
-};
 
 exports.creditsCmd = rl => {
   log('  Autor de la práctica:');
